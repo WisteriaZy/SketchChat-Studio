@@ -19,3 +19,11 @@ nosetests.xml
 .pytest_cache/
 .ipynb_checkpoints/
 .ipynb_checkpoints/*.ipynb
+
+# Local desktop library / previews / logs
+/library/
+/.implementation-check/
+*.log
+
+# Personal original-file backups
+/local-backups/

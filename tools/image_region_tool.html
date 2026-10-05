@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>底图标注台 · 素描本聊天框</title>
+<style>
+:root{color-scheme:light;--ink:#302d3b;--muted:#716a79;--paper:#fffdf9;--line:#e4dfd9;--accent:#6751a5;--soft:#eee8f8}
+*{box-sizing:border-box}body{margin:0;background:#f5f2ec;color:var(--ink);font:15px/1.6 "Segoe UI","Microsoft YaHei",sans-serif}
+main{max-width:1220px;margin:auto;padding:36px 28px}header{margin-bottom:25px}.eyebrow{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--accent)}h1{font-size:30px;letter-spacing:-1px;margin:5px 0}p{margin:8px 0;color:var(--muted)}.badge{display:inline-block;margin-left:12px;padding:3px 10px;border:1px solid var(--line);border-radius:20px;font-size:12px;font-weight:400;vertical-align:middle;letter-spacing:0}
+.layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(330px,1fr);gap:22px;align-items:start}.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden}.card-head{padding:18px 20px;border-bottom:1px solid var(--line)}h2{font-size:16px;margin:0}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.small{font-size:12px}button,.file-button{border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 13px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px;line-height:1.5}button:hover,.file-button:hover{border-color:var(--accent)}button.primary,.file-button{background:var(--accent);color:white;border-color:var(--accent)}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible,.file-button:focus-within{outline:3px solid #b6a1e0;outline-offset:2px}.file-button{position:relative}.file-button input{position:absolute;width:1px;height:1px;opacity:0}
+.workspace{padding:20px;min-height:330px;background-color:#f0ece7;background-image:radial-gradient(#d7d0ca .7px,transparent .7px);background-size:12px 12px}.workspace.dragover{outline:3px dashed var(--accent);outline-offset:-8px}#stage{position:relative;max-width:100%;margin:auto;box-shadow:0 8px 25px #3f35431a;background:repeating-conic-gradient(#e8e8e8 0% 25%,#fff 0% 50%) 0 / 16px 16px;line-height:0;user-select:none}#base-image{display:block;width:100%;height:auto}#drawing{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}#selection{fill:#8b65cc28;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;pointer-events:none}.work-footer{padding:13px 20px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}#metadata{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.settings{padding:20px}.step{margin-bottom:22px}.step:last-child{margin-bottom:0}.step h2{margin-bottom:10px}.num{display:inline-grid;place-items:center;width:23px;height:23px;border-radius:7px;background:var(--soft);color:var(--accent);font-size:12px;margin-right:7px}label.field{display:block;font-size:12px;color:var(--muted)}input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px 10px;color:var(--ink);font:inherit}input[type=text],input[type=number]{margin-top:5px}fieldset{padding:0;margin:0;border:0;min-width:0}.coords{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}#region-summary{background:var(--soft);color:#58417f;border-radius:8px;margin-top:12px;padding:9px 12px;font-size:13px;font-variant-numeric:tabular-nums}#yaml{font:12px/1.8 Consolas,monospace;resize:vertical;min-height:258px;white-space:pre;tab-size:2;background:#f8f7fb}#status{min-height:22px;margin-top:10px;font-size:12px;color:var(--accent)}.note{padding:16px 20px;margin-top:22px;border-left:3px solid #b9a7d4;background:#eee9f3;border-radius:0 10px 10px 0;font-size:13px}.note strong{color:#58417f}.note ol{padding-left:20px;margin:6px 0}.note p{font-size:12px;margin:6px 0 0}code{font-family:Consolas,monospace;color:#594783;overflow-wrap:anywhere}[hidden]{display:none!important}
+@media(max-width:820px){main{padding:22px 16px}.layout{grid-template-columns:1fr}h1{font-size:25px}.workspace{padding:14px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">SKETCHBOOK / LOCAL TOOL</div><h1>底图标注台<span class="badge">本地使用 · 不上传图片</span></h1><p>选一张底图，框出文字所在的位置，再把坐标带回聊天框。</p></header>
+<div class="layout">
+<section class="card" aria-label="底图画布">
+<div class="card-head"><div class="row between"><h2>在图上拖出写字区域</h2><div class="row"><label class="file-button">选择图片<input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" aria-label="选择底图文件"></label><button id="example" type="button">原图示例</button></div></div><p id="metadata" class="small" aria-live="polite">正在加载示例…</p></div>
+<div id="drop-zone" class="workspace"><div id="stage" hidden><img id="base-image" alt="待标注的底图" draggable="false"><svg id="drawing" xmlns="http://www.w3.org/2000/svg" aria-label="拖动鼠标选择矩形；也可使用右侧坐标输入框"><rect id="selection" hidden></rect></svg></div><p id="empty-hint" class="small">也可以把图片拖到这里。支持 PNG、JPEG、WebP、BMP。</p></div>
+<div class="work-footer row between"><span>缩放显示不影响坐标：始终按原图像素计算。</span><button id="clear" type="button" disabled>清除选区</button></div>
+</section>
+<section class="card settings" aria-label="坐标与配置">
+<div class="step"><h2><span class="num">1</span>底图文件位置</h2><label class="field" for="image-path">放进项目后的相对路径，不是本机绝对路径</label><input id="image-path" type="text" value="BaseImages/base.png" spellcheck="false"><p class="small">工具只读取图片，不会替你把文件复制进项目。</p></div>
+<div class="step"><h2><span class="num">2</span>写字区域 · 可手动微调</h2><fieldset id="coordinate-fields" disabled><div class="coords"><label class="field">左上角 X<input id="x1" type="number" min="0" step="1" aria-label="左上角 X"></label><label class="field">左上角 Y<input id="y1" type="number" min="0" step="1" aria-label="左上角 Y"></label><label class="field">右下角 X<input id="x2" type="number" min="1" step="1" aria-label="右下角 X"></label><label class="field">右下角 Y<input id="y2" type="number" min="1" step="1" aria-label="右下角 Y"></label></div></fieldset><div id="region-summary" aria-live="polite">请在图片上拖动，选择一个矩形。</div><p class="small">左上角为 (0, 0)，向右为 X，向下为 Y。右下角填坐标，不是宽高。</p></div>
+<div class="step"><h2><span class="num">3</span>单底图配置片段</h2><textarea id="yaml" readonly aria-label="生成的 YAML 配置" placeholder="选好区域后，这里会生成配置。"></textarea><div class="row" style="margin-top:12px"><button class="primary" id="copy" type="button" disabled>复制配置</button><button id="download" type="button" disabled>下载片段</button></div><div id="status" role="status" aria-live="polite"></div><p class="small">默认关闭原角色的手部遮挡图层，只保留普通表情和 Alt+1。此片段不是完整的 config.yaml。</p></div>
+</section>
+</div>
+<aside class="note"><strong>换图前后，只需要这几步</strong><ol><li>将图片放进项目的 <code>BaseImages</code> 文件夹。推荐使用已摆正方向的 PNG。</li><li>框出矩形写字区域。不要把边框、手指等不能写字的位置框进去。</li><li>在 <code>config.yaml</code> 中<strong>替换同名配置项/整个映射段</strong>，不要重复追加，也不要覆盖整个文件。其它热键、延迟等设置保持不变。</li><li>在原启动窗口按 Ctrl+C 停止，再双击 <code>Start.cmd</code>，先在自己的聊天里测试。</li></ol><p>不同表情共用一套坐标；保留多表情时请让白板位置一致，并自行保留对应映射和快捷键。这里不支持四点透视，也不模拟实际字体排版。JPEG 的方向信息可能与 Python 解码结果不同，建议先转成 PNG。</p></aside>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const fields = ['x1', 'y1', 'x2', 'y2'].map($);
+let width = 0, height = 0, region = null, drag = null, loadVersion = 0, loading = false;
+
+function normalizedRegion(a, b) {
+  return [Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y)];
+}
+function validRegion(r) {
+  return Boolean(r && r.every(Number.isInteger) && r[0] >= 0 && r[1] >= 0 && r[2] <= width && r[3] <= height && r[2] > r[0] && r[3] > r[1]);
+}
+function pointAt(clientX, clientY) {
+  const box = $('drawing').getBoundingClientRect();
+  return {x: Math.max(0, Math.min(width, Math.round((clientX - box.left) * width / box.width))),
+          y: Math.max(0, Math.min(height, Math.round((clientY - box.top) * height / box.height)))};
+}
+function yamlSnippet(r, path) {
+  const quoted = JSON.stringify(path);
+  return ['# 单底图配置片段：替换同名项，不要覆盖整个配置文件',
+    'baseimage_mapping:', '  "#普通#": ' + quoted, 'baseimage_file: ' + quoted, '',
+    'text_box_topleft: [' + r[0] + ', ' + r[1] + ']',
+    'image_box_bottomright: [' + r[2] + ', ' + r[3] + ']', '',
+    'use_base_overlay: false', 'emotion_switch_hotkeys:', '  "alt+1": "#普通#"', ''].join('\n');
+}
+function refresh(syncFields = true) {
+  const valid = validRegion(region);
+  if (syncFields) fields.forEach((field, i) => { field.value = region ? region[i] : ''; });
+  $('selection').toggleAttribute('hidden', !valid);
+  if (valid) {
+    const [x1, y1, x2, y2] = region;
+    Object.entries({x: x1, y: y1, width: x2 - x1, height: y2 - y1}).forEach(([key, value]) => $('selection').setAttribute(key, value));
+    $('region-summary').textContent = '写字区域 ' + (x2 - x1) + ' × ' + (y2 - y1) + ' px · (' + x1 + ', ' + y1 + ') → (' + x2 + ', ' + y2 + ')';
+  } else {
+    $('region-summary').textContent = region ? '坐标无效：请填整数，右下角要大于左上角，且不能超出原图。' : '请在图片上拖动，选择一个矩形。';
+  }
+  const path = $('image-path').value.trim();
+  const canExport = valid && path.length > 0 && !loading;
+  $('yaml').value = canExport ? yamlSnippet(region, path) : '';
+  $('copy').disabled = $('download').disabled = !canExport;
+  $('clear').disabled = !region || loading;
+  $('status').textContent = valid && !path ? '请填写底图在项目中的相对路径。' : '';
+}
+async function loadImage(src, filename, preset = null) {
+  const version = ++loadVersion;
+  loading = true;
+  drag = null;
+  $('coordinate-fields').disabled = true;
+  refresh(false);
+  $('metadata').textContent = '正在读取图片…';
+  try {
+    const image = new Image();
+    await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; image.src = src; });
+    if (version !== loadVersion) return;
+    width = image.naturalWidth; height = image.naturalHeight;
+    $('base-image').src = src;
+    $('base-image').alt = '底图：' + filename;
+    $('stage').style.width = width + 'px';
+    $('drawing').setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    $('stage').hidden = false;
+    $('empty-hint').hidden = true;
+    $('image-path').value = 'BaseImages/' + filename;
+    $('metadata').textContent = filename + ' · 原图 ' + width + ' × ' + height + ' px';
+    fields.forEach((field, i) => { field.max = i % 2 === 0 ? width : height; });
+    region = preset;
+    loading = false;
+    $('coordinate-fields').disabled = false;
+    refresh();
+  } catch {
+    if (version !== loadVersion) return;
+    loading = false; width = height = 0; region = null;
+    $('stage').hidden = true;
+    $('empty-hint').hidden = false;
+    $('metadata').textContent = '图片无法读取。请重新选择有效图片；示例需要同目录下的 BaseImages/base.png。';
+    refresh();
+  }
+}
+function openFile(file) {
+  if (!file) return;
+  if (!/\.(png|jpe?g|webp|bmp)$/i.test(file.name)) { $('status').textContent = '请选择 PNG、JPEG、WebP 或 BMP 图片。'; return; }
+  if (file.size > 30 * 1024 * 1024) { $('status').textContent = '图片超过 30 MB，请先缩小文件后再打开。'; return; }
+  const reader = new FileReader();
+  const version = ++loadVersion;
+  loading = true; drag = null; $('coordinate-fields').disabled = true; refresh(false);
+  reader.onload = () => { if (version === loadVersion) loadImage(reader.result, file.name); };
+  reader.onerror = () => {
+    if (version !== loadVersion) return;
+    loading = false; $('coordinate-fields').disabled = !width; refresh(false);
+    $('status').textContent = '读取文件失败，请重新选择。';
+  };
+  reader.readAsDataURL(file);
+}
+$('file').addEventListener('change', event => { openFile(event.target.files[0]); event.target.value = ''; });
+$('example').addEventListener('click', () => loadImage('BaseImages/base.png', 'base.png', [119, 450, 398, 625]));
+$('image-path').addEventListener('input', () => refresh(false));
+fields.forEach(field => field.addEventListener('input', () => { region = fields.map(item => item.valueAsNumber); refresh(false); }));
+$('clear').addEventListener('click', () => { region = null; refresh(); });
+$('drawing').addEventListener('pointerdown', event => {
+  if (event.button !== 0 || !event.isPrimary || loading || !width) return;
+  event.preventDefault();
+  drag = {id: event.pointerId, start: pointAt(event.clientX, event.clientY), previous: region && [...region]};
+  $('drawing').setPointerCapture(event.pointerId);
+  region = normalizedRegion(drag.start, drag.start); refresh();
+});
+$('drawing').addEventListener('pointermove', event => {
+  if (!drag || event.pointerId !== drag.id) return;
+  region = normalizedRegion(drag.start, pointAt(event.clientX, event.clientY)); refresh();
+});
+$('drawing').addEventListener('pointerup', event => {
+  if (!drag || event.pointerId !== drag.id) return;
+  region = normalizedRegion(drag.start, pointAt(event.clientX, event.clientY));
+  if (!validRegion(region)) region = drag.previous;
+  drag = null;
+  if ($('drawing').hasPointerCapture(event.pointerId)) $('drawing').releasePointerCapture(event.pointerId);
+  refresh();
+});
+function cancelDrag() { if (drag) { region = drag.previous; drag = null; refresh(); } }
+$('drawing').addEventListener('pointercancel', cancelDrag);
+$('drawing').addEventListener('lostpointercapture', cancelDrag);
+$('drop-zone').addEventListener('dragover', event => { event.preventDefault(); $('drop-zone').classList.add('dragover'); });
+$('drop-zone').addEventListener('dragleave', () => $('drop-zone').classList.remove('dragover'));
+$('drop-zone').addEventListener('drop', event => { event.preventDefault(); $('drop-zone').classList.remove('dragover'); openFile(event.dataTransfer.files[0]); });
+$('copy').addEventListener('click', async () => {
+  const text = $('yaml').value;
+  if (!text) return;
+  try {
+    if (!navigator.clipboard) throw new Error('clipboard unavailable');
+    await navigator.clipboard.writeText(text);
+    $('status').textContent = '已复制。请替换 config.yaml 中的同名项，然后重启聊天框。';
+  } catch {
+    $('yaml').focus(); $('yaml').select();
+    $('status').textContent = '浏览器不允许直接复制，已选中配置；请按 Ctrl+C（macOS 为 Command+C）。';
+  }
+});
+$('download').addEventListener('click', () => {
+  if (!$('yaml').value) return;
+  const url = URL.createObjectURL(new Blob([$('yaml').value], {type: 'text/yaml;charset=utf-8'}));
+  const a = document.createElement('a'); a.href = url; a.download = 'baseimage-snippet.yaml';
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  $('status').textContent = '已请求下载配置片段；请勿用它直接覆盖整个 config.yaml。';
+});
+loadImage('BaseImages/base.png', 'base.png', [119, 450, 398, 625]);
+</script>
+</body>
+</html>

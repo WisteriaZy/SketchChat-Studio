@@ -5,3 +5,4 @@ pywin32>=311
 psutil
 pydantic
 PyYAML>=6.0
+PySide6>=6.8,<7

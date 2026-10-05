@@ -183,7 +183,7 @@ def process_text_and_image(text: str, image: Optional[Image.Image]) -> Optional[
 
     # 只有文本的情况
     elif text != "" and image is None:
-        logging.info("从文本生成图片: " + text)
+        logging.info("从文本生成图片，字符数=%d", len(text))
         try:
             return draw_text_auto(
                 image_source=last_used_image_file,
@@ -205,7 +205,7 @@ def process_text_and_image(text: str, image: Optional[Image.Image]) -> Optional[
     # 同时有图像和文本的情况
     else:
         logging.info("同时处理文本和图片内容")
-        logging.info("文本内容: " + text)
+        logging.info("文本字符数=%d", len(text))
         get_ratio(x1, y1, x2, y2)
         try:
             # 根据图像方向决定排布方式
@@ -303,10 +303,12 @@ def generate_image():
     生成图像的主函数
     """
     global last_used_image_file  # 保存上次使用差分
+    logging.info("收到生成热键：%s", config.hotkey)
 
     # 检查是否设置了允许的进程列表，如果设置了，则检查当前进程是否在允许列表中
     if config.allowed_processes:
         current_process = get_foreground_window_process_name()
+        logging.info("当前前台进程：%s", current_process)
         if current_process is None or current_process not in [
             p.lower() for p in config.allowed_processes
         ]:
@@ -319,9 +321,8 @@ def generate_image():
     # `cut_all_and_get_text` 会清空剪切板，所以 `try_get_image` 要在前面调用
     user_pasted_image = try_get_image()
     user_input, old_clipboard_content = cut_all_and_get_text()
-    logging.debug(f"用户粘贴图片: {user_pasted_image is not None}")
-    logging.debug(f"用户输入的文本内容: {user_input}")
-    logging.debug(f"历史剪贴板内容: {old_clipboard_content}")
+    logging.info("剪切读取完成：字符数=%d，剪贴板含图片=%s",
+                 len(user_input), user_pasted_image is not None)
 
     if user_input == "" and user_pasted_image is None:
         logging.info("未检测到文本或图片输入，取消生成")
@@ -344,20 +345,24 @@ def generate_image():
         logging.error("生成图片失败！未生成 PNG 字节。")
         return
 
+    logging.info("图像生成完成，PNG 字节数=%d", len(png_bytes))
     copy_png_bytes_to_clipboard(png_bytes)
+    logging.info("图片已写入剪贴板")
 
     if config.auto_paste_image:
+        logging.info("请求粘贴：%s", config.paste_hotkey)
         keyboard.send(config.paste_hotkey)
 
         time.sleep(config.delay)
 
         if config.auto_send_image:
+            logging.info("请求发送：%s", config.send_hotkey)
             keyboard.send(config.send_hotkey)
 
     # 恢复原始剪贴板内容
     pyperclip.copy(old_clipboard_content)
 
-    logging.info("成功地生成并发送图片！")
+    logging.info("生成流程完成（需在聊天窗口确认实际粘贴/发送结果）")
 
 def get_ratio(x1, y1, x2, y2):
     try:
@@ -367,23 +372,38 @@ def get_ratio(x1, y1, x2, y2):
     except Exception as e:
         logging.error("计算比例时出错: %s", e)
 
-# 绑定 Ctrl+Alt+H 作为全局热键
-is_hotkey_bound = keyboard.add_hotkey(
-    config.hotkey,
-    generate_image,
-    suppress=config.block_hotkey or config.hotkey == config.send_hotkey,
-)
+def handle_generate_hotkey():
+    """保留原有热键行为，并将回调异常写入诊断日志。"""
+    try:
+        return generate_image()
+    except Exception:
+        logging.exception("热键处理失败")
+        return None
 
-logging.info("热键绑定: " + str(bool(is_hotkey_bound)))
-logging.info("允许的进程: " + str(config.allowed_processes))
-logging.info("键盘监听已启动，按下 {} 以生成图片".format(config.hotkey))
 
-# 注册表情切换快捷键
-register_emotion_switch_hotkeys()
-logging.info("表情切换快捷键已注册: " + str(config.emotion_switch_hotkeys))
+# 绑定配置中的全局热键
+def run_legacy_listener():
+    """Import-safe legacy entry point."""
+    is_hotkey_bound = keyboard.add_hotkey(
+        config.hotkey,
+        handle_generate_hotkey,
+        suppress=config.block_hotkey or config.hotkey == config.send_hotkey,
+    )
 
-# 保持程序运行
-try:
-    keyboard.wait()
-except KeyboardInterrupt:
-    pass  # 允许通过 Ctrl+C 退出程序
+    logging.info("热键回调已注册: %s（实际监听请通过按键触发日志确认）", bool(is_hotkey_bound))
+    logging.info("允许的进程: " + str(config.allowed_processes))
+    logging.info("键盘监听已启动，按下 {} 以生成图片".format(config.hotkey))
+
+    # 注册表情切换快捷键
+    register_emotion_switch_hotkeys()
+    logging.info("表情切换快捷键已注册: " + str(config.emotion_switch_hotkeys))
+
+    # 保持程序运行
+    try:
+        keyboard.wait()
+    except KeyboardInterrupt:
+        pass  # 允许通过 Ctrl+C 退出程序
+
+
+if __name__ == "__main__":
+    run_legacy_listener()
