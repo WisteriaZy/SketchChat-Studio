@@ -27,3 +27,6 @@ nosetests.xml
 
 # Personal original-file backups
 /local-backups/
+
+# Pending launcher while the installed EXE is in use
+/StartStudio-next.exe

@@ -16,9 +16,15 @@ internal static class StudioLauncher
         bool verify = args.Length == 1 && args[0] == "--verify-launch";
         try
         {
-            if (!File.Exists(python)) throw new FileNotFoundException("Missing .venv\\Scripts\\python.exe.");
+
             if (!File.Exists(script)) throw new FileNotFoundException("Keep StartStudio.exe beside desktop.py.");
-            if (check) return 0;
+            if (check) return Bootstrap.Ready(root, delegate(string text) { }) ? 0 : 1;
+            if (!verify)
+            {
+                Application.EnableVisualStyles();
+                if (!Bootstrap.Ensure(root)) return 0;
+            }
+            if (!File.Exists(python)) throw new FileNotFoundException("Missing .venv Python environment.");
             string logDir = Path.Combine(root, "library");
             Directory.CreateDirectory(logDir);
             string logPath = Path.Combine(logDir, verify ? "launcher-verification.log" : "launcher.log");

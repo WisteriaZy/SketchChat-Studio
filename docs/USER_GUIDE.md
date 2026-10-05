@@ -138,3 +138,8 @@ Windows 的 keyboard 后端可能为左右 Alt/Ctrl 返回重叠扫描码，因�
 
 
 启动器现改用 `python.exe` 配合 Windows `CreateNoWindow`，标准输入/输出/错误全部重定向，不依赖 pythonw 的控制台行为。启动器在管理器运行期间保持运行以收集输出，正常退出后一起结束。桌面运行日志只写 `library/studio.log`，早期启动错误和第三方输出写 `library/launcher.log`。`StartStudio.exe --verify-launch` 可运行无界面探针检查 Python 是否关联控制台，不启动聊天监听。
+
+
+## 首次初始化向导
+
+启动器现在先离线检测环境；缺失依赖时需点击“确认安装 / 修复”才会创建 `.venv` 并联网安装 requirements.txt。安装进度和异常保存在 `library/setup.log`。已就绪的环境不运行 pip。系统 Python 需用户自行安装；残缺环境不会自动删除。初始化失败可重试，取消确认则不启动应用。
