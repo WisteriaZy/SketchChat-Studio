@@ -39,3 +39,20 @@ powershell -NoProfile -File .\scripts\Verify.ps1 -BuildLauncher
 
 仓库文件夹暂保留旧名称；直接移动 `.venv` 可能使工具中的绝对路径失效。
 如需更名目录，应先备份素材库，在新目录重建虚拟环境，而不是直接假定旧环境可移动。
+
+## 手动构建与启动探针
+
+在安装有 .NET Framework C# 编译器的 Windows 上，从项目根目录执行：
+
+```powershell
+powershell -NoProfile -File .\launcher\Build.ps1
+.\StartStudio.exe --check
+.\StartStudio.exe --verify-launch
+```
+
+`--check` 仅离线检测依赖并返回退出码，不安装、不弹初始化向导。
+`--verify-launch` 只运行控制台句柄探针，不启动管理器或聊天监听。
+
+初始化向导默认使用 PyPI，并遵循用户 pip 配置。仅在确认安装后联网；
+安装期间不支持强制取消，失败可重试，残缺 `.venv` 不会自动删除。
+自动测试使用模拟键盘/剪贴板接口，不向真实 QQ/微信发送消息，不能替代真实桌面验收。
